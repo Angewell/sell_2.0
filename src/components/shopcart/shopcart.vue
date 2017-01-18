@@ -38,7 +38,9 @@
               <div class="item_name">{{food.name}}</div>
               <div class="item_price">￥<span class="num">{{food.count * food.price}}</span></div>
               <div class="cartcontrol_wrapper">
-                <cartcontrol :food="food"></cartcontrol>
+                <cartcontrol 
+                  @cartAdd="drop"
+                  :food="food"></cartcontrol>
               </div>
             </li>
           </ul>
@@ -87,7 +89,9 @@
           {show: false},
           {show: false},
           {show: false}
-        ]
+        ],
+        // 执行完动画的小球，临时存储在这
+        dropBalls: []
       };
     },
     computed: {
@@ -152,64 +156,67 @@
       },
 
       // 改变数据模型中的balls，来触发小球的drop动画
+      // 这个方法还在goods组件中，被_drop方法间接调用
       drop(el) {
-        // console.log(el.getBoundingClientRect());
         for (let i = 0, length = this.balls.length; i < length; i++) {
           let ball = this.balls[i];
           if (!ball.show) {
             ball.show = true;
             ball.el = el;
+            this.dropBalls.push(ball);
             return;
           }
         }
       },
       // 小球动画开始之前
       dropBeforeEnter(el) {
-        this.$nextTick(() => {
-          for (let i = 0, len = this.balls.length; i < len; i++) {
-            let ball = this.balls[i];
-            if (ball.show) {
-              let rect = ball.el.getBoundingClientRect();
-              let x = (rect.left - 53) + 'px';
-              let y = -(rect.bottom - 42) + 'px';
-              let inner = el.querySelector('.ball_inner');
-              el.style.transform = `translate3d(0, ${y}, 0)`;
-              el.style.webkitTransform = `translate3d(0, ${y}, 0)`;
-              el.style.transition = 'all 4s cubic-bezier(.42,-0.36,.85,.57)';
-              el.style.webkitTransition = 'all 4s cubic-bezier(.42,-0.36,.85,.57)';
-              inner.style.transform = `translate3d(${x}, 0, 0)`;
-              inner.style.webkitTransform = `translate3d(${x}, 0, 0)`;
-              inner.style.transition = 'all 4s linear';
-              inner.style.webkitTransition = 'all 4s linear';
-            }
+        // 小球运动之前，先确定开始的位置
+        for (let i = 0, len = this.balls.length; i < len; i++) {
+          let ball = this.balls[i];
+          if (ball.show) {
+            let rect = ball.el.getBoundingClientRect();
+            let x = (rect.left - 46) + 'px';
+            let y = -(window.innerHeight - rect.top - 65) + 'px';
+            let inner = el.querySelector('.ball_inner');
+            el.style.transform = `translate3d(0, ${y}, 0)`;
+            el.style.webkitTransform = `translate3d(0, ${y}, 0)`;
+            inner.style.transform = `translate3d(${x}, 0, 0)`;
+            inner.style.webkitTransform = `translate3d(${x}, 0, 0)`;
           }
-        });
+        }
       },
 
       // 小球动画开始
       dropEnter(el) {
+        // 用el.offsetHeight来触发浏览器重绘，这样就能正确的计算出位置了
+        /* eslint-disable no-unused-vars */
+        let rf = el.offsetHeight;
         this.$nextTick(() => {
           el.style.transform = 'translate3d(0,0,0)';
           el.style.webkitTransform = 'translate3d(0,0,0)';
+          el.style.transition = 'all .4s cubic-bezier(.32,-0.59,.85,.57)';
+          el.style.webkitTransition = 'all .4s cubic-bezier(.32,-0.59,.85,.57)';
           let inner = el.querySelector('.ball_inner');
           inner.style.transform = 'translate3d(0, 0, 0)';
           inner.style.webkitTransform = 'translate3d(0, 0, 0)';
+          inner.style.transition = 'all .4s linear';
+          inner.style.webkitTransition = 'all .4s linear';
         });
       },
       // 小球动画结束后
       dropAfterEnter(el) {
-        for (let i = 0, length = this.balls.length; i < length; i++) {
-          let ball = this.balls[i];
-          if (ball.show) {
-            ball.show = false;
-            ball.el.style.transform = 'translate3d(0, 0, 0)';
-            ball.el.style.webkitTransform = 'translate3d(0, 0, 0)';
-            let inner = el.querySelector('.ball_inner');
-            inner.style.transform = 'translate3d(0, 0, 0)';
-            inner.style.webkitTransform = 'translate3d(0, 0, 0)';
-            return;
-          }
+        // 在dropBalls里，要以队列的形式来使运动完成的小球隐藏
+        // 因为开始运动之前，是把小球push到dropBalls的最后一个
+        // 以这种队列的形式，才不至于因为点击过快而露掉哪个小球
+        let ball = this.dropBalls.shift();
+        if (ball) {
+          ball.show = false;
         }
+        el.style.transition = '';
+        el.style.webkitTransition = '';
+        let inner = el.querySelector('.ball_inner');
+        inner.style.transition = '';
+        inner.style.webkitTransition = '';
       }
     },
     components: {
