@@ -18,7 +18,7 @@
           <span class="text">{{seller.supports[0].description}}</span>
         </div>
         <div class="support_count" v-if="seller.supports" @click="showDetail">
-          <span class="number">{{seller.supports.length}}</span>
+          <span class="number">{{seller.supports.length}}个</span>
           <i class="icon icon-keyboard_arrow_right"></i>
         </div>
       </div>
@@ -201,7 +201,7 @@ export default {
       position: fixed
       top: 0
       left: 0
-      z-index: 50
+      z-index: 250
       width: 100%
       height: 100%
       background: rgba($dark7,.8)

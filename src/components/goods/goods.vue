@@ -45,6 +45,7 @@
     </div>
 
     <!-- 购物车 -->
+    <!-- 在goods组件中，ref='shopcart' 来引用子组件shopcart，这样，就可以在goods组件的方法中通过this.$refs.shopcart.drop()来调用shopcart组件的drop方法了-->
     <shopcart
       ref="shopcart"
       :select-foods="selectFoods"

@@ -1,8 +1,8 @@
 <template>
   <div class="shopcart">
-    <div class="content" @click="showList">
+    <div class="content">
       <div class="cartIcon_wrapper">
-        <div class="cartIcon" :class="{'hasSelect': totalCount > 0}">
+        <div  @click="toggleList" class="cartIcon" :class="{'hasSelect': totalCount > 0}">
           <div v-show="totalCount > 0" class="cartNum">{{totalCount}}</div>
           <i class="icon-shopping_cart"></i>
         </div>
@@ -10,7 +10,7 @@
 
       <div class="total" :class="{'hasSelect': totalPrice > 0}">￥{{totalPrice}}</div>
       <div class="tips">另需配送费￥{{deliveryPrice}}元</div>
-      <div class="startSend" :class="{'pay': totalPrice > minPrice}">{{payDesc}}</div>
+      <div @click="pay" class="startSend" :class="{'pay': totalPrice > minPrice}">{{payDesc}}</div>
 
       <div class="ball_container">
         <transition 
@@ -81,7 +81,7 @@
     data() {
       return {
         // 是否显示购物车的列表
-        listShow: false,
+        isShow: false,
         // 加入购物车的小球动画
         balls: [
           {show: false},
@@ -95,6 +95,26 @@
       };
     },
     computed: {
+      // listShow用计算属性，而不用方法的原因在于清空购物车的时候，
+      // 计算属性会自动清空所有，并隐藏购物车列表，如果在方法中则需手动调用hideList方法
+      listShow() {
+        if (!this.totalCount) {
+          this.isShow = false;
+          return false;
+        }
+        if (this.isShow) {
+          this.$nextTick(() => {
+            if (!this.cartScroll) {
+              this.cartScroll = new BScroll('.list_content', {
+                click: true
+              });
+            } else {
+              this.cartScroll.refresh();
+            }
+          });
+        }
+        return this.isShow;
+      },
       // 购物车中的总数
       totalCount() {
         let count = 0;
@@ -127,23 +147,21 @@
       }
     },
     methods: {
-      // 显示购物车列表
-      showList() {
-        this.listShow = true;
-
-        this.$nextTick(() => {
-          if (!this.cartScroll) {
-            this.cartScroll = new BScroll('.list_content', {
-              click: true
-            });
-          } else {
-            this.cartScroll.refresh();
-          }
-        });
-      },
       // 隐藏购物车列表
       hideList() {
-        this.listShow = false;
+        this.isShow = false;
+      },
+      // 切换购物车列表的显示/隐藏
+      toggleList() {
+        if (this.totalCount) {
+          this.isShow = !this.isShow;
+        }
+      },
+      // 模拟结算
+      pay() {
+        if (this.totalPrice >= this.minPrice) {
+          window.alert(`已支付${this.totalPrice}元`);
+        }
       },
       // 清空购物车
       emptyCart() {
@@ -162,7 +180,11 @@
           let ball = this.balls[i];
           if (!ball.show) {
             ball.show = true;
+            // 把当前点击的元素，设置成ball的属性，这样在dropBeforeEnter钩子函数里，
+            // 就能通过ball.el来确定小球的起始位置了
             ball.el = el;
+            // 把开始运动的小球，放在dropBalls里，以便在运动结束之后隐藏该小球
+            // 是为了能确定哪个小球，防止点击过快的话不能确定哪个小球是执行动画的
             this.dropBalls.push(ball);
             return;
           }
@@ -191,6 +213,7 @@
         // 用el.offsetHeight来触发浏览器重绘，这样就能正确的计算出位置了
         /* eslint-disable no-unused-vars */
         let rf = el.offsetHeight;
+        // 开始运动的时候，就设置相应的transition和transfrom
         this.$nextTick(() => {
           el.style.transform = 'translate3d(0,0,0)';
           el.style.webkitTransform = 'translate3d(0,0,0)';
@@ -212,6 +235,7 @@
         if (ball) {
           ball.show = false;
         }
+        // 运动结束后，要把transition设置为空，否则会影响该小球下次出现时候的动画
         el.style.transition = '';
         el.style.webkitTransition = '';
         let inner = el.querySelector('.ball_inner');
@@ -319,10 +343,12 @@
       bottom: 48px
       z-index: 101
       width: 100%
+      transform-origin: left bottom
       &.slide-enter,
       &.slide-leave-active
         opacity: 0
-        transform: translate3d(0, -100%, 0)
+        // transform: translate3d(0, 100%, 0)
+        transform: scaleY(0)
       &.slide-enter-active,
       &.slide-leave-active
         transition: all 0.3s ease
