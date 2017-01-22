@@ -18,7 +18,7 @@
           <div class="section_title">{{item.name}}</div>
           <ul>
             <li v-for="food in item.foods" class="section_list">
-              <div class="section_list_inner">
+              <div @click="showFoodDetail($event, food)" class="section_list_inner">
                 <div class="section_list_icon" :style="{'background-image': 'url('+ food.icon +')'}"></div>
                 <div class="section_list_content">
                   <h3 class="list_name">{{food.name}}</h3>
@@ -51,6 +51,12 @@
       :select-foods="selectFoods"
       :deliveryPrice="seller.deliveryPrice"
       :minPrice="seller.minPrice"></shopcart>
+
+    <!-- 菜品详情 -->
+    <!-- 监听fooddetail组件派发($emit)的cartAdd事件 -->
+    <fooddetail
+      @cartAdd="_drop"
+      ref="foodDetail"></fooddetail>
   </div>
 </template>
 
@@ -58,6 +64,7 @@
   import BScroll from 'better-scroll';
   import cartcontrol from 'components/cartcontrol/cartcontrol';
   import shopcart from 'components/shopcart/shopcart';
+  import fooddetail from 'components/foodDetail/foodDetail';
 
   export default {
     props: {
@@ -165,13 +172,21 @@
       // 选中左侧菜单列表
       selectMenu(e, index) {
         this.foodScroll.scrollToElement(this.foodSections[index], 300);
+      },
+      // 显示选中的菜品的详情
+      showFoodDetail(event, food) {
+        if (!event._constructed) {
+          return;
+        }
+        this.$refs.foodDetail._showFoodDetail(food);
       }
     },
 
     // 注册引入的组件
     components: {
       cartcontrol,
-      shopcart
+      shopcart,
+      fooddetail
     }
   };
 </script>
