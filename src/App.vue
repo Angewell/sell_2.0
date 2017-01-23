@@ -7,7 +7,7 @@
       <router-link class="tab_item" to="/ratings">评价</router-link>
       <router-link class="tab_item" to="/seller">商家</router-link>
     </div>
-    
+    <!-- keep-alive能确保切换组件的时候，组件保留在内存中不被重新渲染，这样切换后，加入到购物车中的商品不会被清零 -->
     <keep-alive>
       <router-view :seller="seller"></router-view>
     </keep-alive>
