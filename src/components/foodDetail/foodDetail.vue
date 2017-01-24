@@ -36,9 +36,9 @@
           <h1>商品评价</h1>
 
           <div class="rating_types border_1px">
-            <div class="rating_type_item rating_all">全部 <span v-show="allRatings">{{allRatings}}</span></div>
-            <div class="rating_type_item rating_good">推荐 <span>{{goodRatings}}</span></div>
-            <div class="rating_type_item rating_bad">吐槽 <span>{{badRatings}}</span></div>
+            <div @click="showAllRatings" class="rating_type_item rating_all">全部 <span v-show="allRatings">{{allRatings}}</span></div>
+            <div @click="showGoodRatings" class="rating_type_item rating_good">推荐 <span>{{goodRatings}}</span></div>
+            <div @click="showBadRatings" class="rating_type_item rating_bad">吐槽 <span>{{badRatings}}</span></div>
           </div>
 
           <div class="rating_showContentOnly border_1px">
@@ -54,7 +54,7 @@
             <li 
               class="rating_item"
               v-for="rating in food.ratings"
-              v-show="(isShowContentOnly && rating.text) || !isShowContentOnly">
+              v-show="isShowAllRatings || (isShowGoodRatings && rating.rateType === 0) || (isShowBadRatings && rating.rateType === 1) || (isShowContentOnly && rating.text)">
               <div class="rating_info clearfix">
                 <div class="rating_date f_l">{{rating.rateTime | dateFormat}}</div>
                 <div class="rating_user f_r"><span class="user_name">{{rating.username}}</span><img class="user_avatar" :src="rating.avatar"></div>
@@ -80,6 +80,12 @@
       return {
         isShow: false,
         food: {},
+        // 显示所有评论
+        isShowAllRatings: true,
+        // 显示推荐评论
+        isShowGoodRatings: false,
+        // 显示吐槽评论
+        isShowBadRatings: false,
         // 是否只显示有内容的评价
         isShowContentOnly: false
       };
@@ -124,7 +130,7 @@
 
     methods: {
       // 处理子组件cartcontrol派发($emit)的 cartAdd 自定义事件，
-      // 并继续把 cartAdd 事件，向父级传递，
+      // 并继续把 cartAdd 事件继续向父级传递，
       // 参数为cartcontrol中，触发cartAdd事件的元素
       _drop(el) {
         this.$emit('cartAdd', el);
@@ -147,6 +153,7 @@
       hideFoodDetail() {
         this.isShow = false;
         this.isShowContentOnly = false;
+        this.showAllRatings();
       },
       // 点击“立即购买”按钮添加到购物车
       addFirst(event) {
@@ -158,13 +165,57 @@
         let el = event.target.parentNode.querySelector('.cart_add');
         this.$emit('cartAdd', el);
       },
-      // 切换 只看有内容的评论
-      toggleContentOnly() {
-        this.isShowContentOnly = !this.isShowContentOnly;
+      // 更新foodScroll
+      refreshFoodScroll() {
         // 有内容显示和隐藏，要记得刷新better-scroll，否则会出现下边的内容滚动不出来，或下边留白的问题
         this.$nextTick(() => {
           this.foodScroll.refresh();
         });
+      },
+      // 显示全部评论
+      showAllRatings() {
+        if (this.isShowAllRatings) {
+          return;
+        }
+        this.isShowAllRatings = true;
+        this.isShowGoodRatings = false;
+        this.isShowBadRatings = false;
+        this.isShowContentOnly = false;
+        this.refreshFoodScroll();
+      },
+      // 显示推荐评论
+      showGoodRatings() {
+        if (this.isShowGoodRatings) {
+          return;
+        }
+        this.isShowGoodRatings = true;
+        this.isShowAllRatings = false;
+        this.isShowBadRatings = false;
+        this.isShowContentOnly = false;
+        this.refreshFoodScroll();
+      },
+      // 显示吐槽评论
+      showBadRatings() {
+        if (this.isShowBadRatings) {
+          return;
+        }
+        this.isShowBadRatings = true;
+        this.isShowGoodRatings = false;
+        this.isShowAllRatings = false;
+        this.isShowContentOnly = false;
+        this.refreshFoodScroll();
+      },
+      // 切换 只看有内容的评论
+      toggleContentOnly() {
+        if (this.isShowContentOnly) {
+          this.showAllRatings();
+        } else {
+          this.isShowContentOnly = true;
+          this.isShowBadRatings = false;
+          this.isShowGoodRatings = false;
+          this.isShowAllRatings = false;
+        }
+        this.refreshFoodScroll();
       }
     },
     // 过滤器
